@@ -1,0 +1,9 @@
+IPython
+librosa
+matplotlib
+numpy
+pydub
+pandas
+scipy
+seaborn
+torch
