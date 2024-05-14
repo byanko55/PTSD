@@ -2,6 +2,9 @@ from ops.misc import *
 
 import random
 import librosa
+import matplotlib.pyplot as plt
+
+from IPython.display import Audio
 
 
 def extract_mel(filename:str, n_mels:int = 128, compress:bool = False) -> np.ndarray:
@@ -150,6 +153,51 @@ class AudioLoader():
         print("  ┕ Final result:", 
               self.shape, 
               "\n  Done.\n%s"%('-'*(33+len(dataset_name))))
+        
+    def waveplot(self, item:int=-1) -> None:
+        """
+        Plot the loudness of the audio at a given time
+
+        Args:
+            item (int): index of sampled audio file
+        """
+
+        if item == -1: # Randomly pick up one sample
+            item = random.randrange(0, self.num_audios)
+        
+        data, sampling_rate = librosa.load(self.audio_paths[item])
+
+        plt.figure(figsize=(12, 3))
+        librosa.display.waveshow(data, sr=sampling_rate)
+        plt.tight_layout()
+        plt.show()
+
+    def spectrogram(self) -> None:
+        """
+        Plot a representation of frequencies changing 
+        with respect to time for given audio/music signals
+        """
+
+        ridx = random.randrange(0, self.num_audios)
+        data, sampling_rate = librosa.load(self.audio_paths[ridx])
+
+        X = librosa.stft(data)
+        Xdb = librosa.amplitude_to_db(abs(X))
+        plt.figure(figsize=(12, 3))
+        librosa.display.specshow(Xdb, sr=sampling_rate, x_axis='time', y_axis='hz')   
+        plt.colorbar()
+
+    def sampleplay(self) -> Audio:
+        """
+        Create an audio object.
+        It will result in Audio controls being displayed in the frontend (only works in the notebook).
+        
+        Retruns:
+            (Audio) : audio object
+        """
+
+        ridx = random.randrange(0, self.num_audios)
+        return Audio(self.audio_paths[ridx])
 
     def __len__(self) -> int:
         """
