@@ -198,6 +198,66 @@ class AudioLoader():
 
         ridx = random.randrange(0, self.num_audios)
         return Audio(self.audio_paths[ridx])
+    
+    def noise(self, x:np.ndarray) -> np.ndarray:
+        """
+        Data Augmentation 1: noise injection
+
+        Args:
+            x (np.ndarray) : audio time series
+
+        Returns:
+            (np.ndarray) : noised audio data
+        """
+
+        noise_amp = 0.035*np.random.uniform()*np.amax(x)
+        x = x + noise_amp*np.random.normal(size=x.shape[0])
+        return x
+
+    def stretch(self, x:np.ndarray, rate:float = 0.8) -> np.ndarray:
+        """
+        Data Augmentation 2: strectch the audio file length
+
+        Args:
+            x (np.ndarray) : audio time series
+            rate (float, Optional) : Stretch factor.  
+                If ``rate > 1``, then the signal is sped up.
+                If ``rate < 1``, then the signal is slowed down.
+        
+        Returns:
+            (np.ndarray) : audio time series stretched by the specified rate
+        """
+
+        return librosa.effects.time_stretch(x, rate)
+
+    def shift(self, x:np.ndarray) -> np.ndarray:
+        """
+        Data Augmentation 3: Time shift
+
+        Args:
+            x (np.ndarray) : audio time series
+
+        Returns:
+            (np.ndarray) : output audio time-series, with the same shape as `x`
+        """
+
+        shift_range = int(np.random.uniform(low=-5, high = 5)*1000)
+        return np.roll(x, shift_range)
+
+    def pitch(self, x:np.ndarray, sampling_rate:float, pitch_factor:float = 0.7) -> np.ndarray:
+        """
+        Data Augmentation 4: change pitch
+
+        Args:
+            x (np.ndarray) : audio time series
+            sampling_rate (float) : audio sampling rate
+            pitch_factor (float, Optional) : how many (fractional) steps to shift
+        
+        Returns:
+            (np.ndarray) : the pitch-shifted audio time-series
+        """
+
+        return librosa.effects.pitch_shift(x, sampling_rate, pitch_factor)
 
     def __len__(self) -> int:
         """
