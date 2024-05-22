@@ -2,9 +2,13 @@ from ops.misc import *
 
 import random
 import librosa
+import warnings
 import matplotlib.pyplot as plt
 
+from scipy import fftpack
 from IPython.display import Audio
+
+warnings.filterwarnings("ignore")
 
 
 def extract_mel(filename:str, n_mels:int = 128, compress:bool = False) -> np.ndarray:
@@ -47,6 +51,52 @@ def extract_mfcc(filename:str, n_mfcc:int = 20, compress:bool = False) -> np.nda
     return out
 
 
+def extract_lfcc(filename:str, n_fft:int=2048, n_lfcc:int=20, compress:bool = False) -> np.ndarray:
+    """
+    Extract a Linear-frequency cepstral coefficients (LFCCs).
+
+    Args:
+        filename (str): wav file name.
+        n_fft (int): length of the windowed signal after padding with zeros.
+        n_lfcc (int): number of LFCCs to return.
+        compress (bool): if True, calculate the mean of each channel.
+    Returns:
+        out (np.ndarray) : LFCC sequence.
+    """
+    data, sampling_rate = librosa.load(filename)
+
+    S = np.abs(librosa.stft(y = data, n_fft=n_fft, pad_mode='reflect'))**2
+
+    fmin, fmax = 0.0, float(sampling_rate) / 2
+    n_filter = 128
+    weights = np.zeros((n_filter, int(1 + n_fft // 2)), dtype=np.float32)
+
+    fftfreqs = librosa.fft_frequencies(sr=sampling_rate, n_fft=n_fft)
+
+    linear_f = np.linspace(fmin, fmax, n_filter + 2)
+
+    fdiff = np.diff(linear_f)
+    ramps = np.subtract.outer(linear_f, fftfreqs)
+
+    for i in range(n_filter):
+        lower = -ramps[i] / fdiff[i]
+        upper = ramps[i + 2] / fdiff[i + 1]
+
+        weights[i] = np.maximum(0, np.minimum(lower, upper))
+
+    linear_spec = np.dot(weights, S)
+
+    S = librosa.power_to_db(linear_spec)
+
+    out = (fftpack.dct(S, axis=0, norm='ortho')[:n_lfcc]).T
+
+    if compress:
+        out = np.mean(out, axis=0)
+        return out
+    
+    return out
+
+
 class AudioLoader():
     def __init__(
         self,
@@ -72,16 +122,18 @@ class AudioLoader():
                 2) mel-2d: mel-scaled spectrogram
                 3) mfcc: mean of Mel-frequency cepstral coefficients
                 4) mfcc-2d: Mel-frequency cepstral coefficients
+                5) lfcc: mean of Linear-frequency cepstral coefficients
+                6) lfcc-2d: Linear-frequency cepstral coefficients
             trim (int) : maximum number of time window.
             n_channels (int) : number of channels composed of a spectrum.
             sampling_rate (float): define the ratio to draw samples from the dataset.
             shuffle (bool): set to 'True' to have the data reshuffled.
         """
 
-        if mode not in ['mel', 'mfcc', 'mel-2d', 'mfcc-2d']:
+        if mode not in ['mel', 'mfcc', 'lfcc', 'mel-2d', 'mfcc-2d', 'lfcc-2d']:
             raise ValueError(
                 "[AudioLoader: extract] Extraction mode should be one among \
-                \{\'mel\', \'mel-2d\', \'mfcc\', \'mfcc-2d\'\}"
+                \{\'mel\', \'mel-2d\', \'mfcc\', \'mfcc-2d\', \'lfcc\', \'lfcc-2d\'\}"
             )
 
         print("---------- Loading %s... ----------\n  ┕ #Original audios = %d \
@@ -113,15 +165,17 @@ class AudioLoader():
             targets = targets[indices]
         
         # if True, calculate the mean of each channel
-        compress_mode = (mode[-2:] != '2d' and mode[:4] != 'lfcc')
+        compress_mode = (mode[-2:] != '2d')
         self.data = []
         self.num_audios = len(targets)
 
         for i, wavfile in enumerate(audio_paths):
             if mode[:3] == 'mel' :
                 feature = extract_mel(wavfile, n_mels=n_channels, compress=compress_mode)
-            else :
+            elif mode[:4] == 'mfcc':
                 feature = extract_mfcc(wavfile, n_mfcc=n_channels, compress=compress_mode)
+            else :
+                feature = extract_lfcc(wavfile, n_lfcc=n_channels, compress=compress_mode)
 
             # fix the input size as [trim, n_mels/n_mfcc]
             if not compress_mode :
