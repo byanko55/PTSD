@@ -1,5 +1,5 @@
 from .speechset import *
-from ._multiloader import *
+from ._multiloader import MultiLoader
 
 __all__ = [
     "CremaTwoModal",

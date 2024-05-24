@@ -1,10 +1,13 @@
-from ._audioloader import *
+from ops.misc import *
+from _dataloader import CustomLoader
+from ._audioloader import AudioLoader
 from .stt import Wav2Vec
 
+import random
 from transformers import BertTokenizer, BertModel
 
 
-class MultiLoader():
+class MultiLoader(CustomLoader):
     def __init__(
         self,
         audio_data:AudioLoader

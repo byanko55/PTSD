@@ -1,4 +1,5 @@
 from ops.misc import *
+from _dataloader import CustomLoader
 
 import random
 import librosa
@@ -145,7 +146,7 @@ def extract_full(filename:str, n_channels:int = 20) -> np.ndarray:
     return out.T
 
 
-class AudioLoader():
+class AudioLoader(CustomLoader):
     def __init__(
         self,
         audio_paths:List[str],
