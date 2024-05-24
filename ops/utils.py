@@ -1,7 +1,9 @@
-from typing import Tuple, Any
+from ops.misc import *
 
 from torch import Generator
 from torch.utils.data import Dataset, DataLoader, random_split
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
 
 
 def split_dataset(dataset:Dataset, train_ratio:float = 0.7, test_ratio:float = 0.2) -> Tuple[Any, Any, Any]:
@@ -83,3 +85,28 @@ def build_batches(dataset:Dataset, batch_size:int = 128, train_ratio:float = 0.7
     }
 
     return batch_loader
+
+
+def make_clusters(dataset:Dataset, sample_size:int = 500) -> None:
+    pop_size = len(dataset)
+    indices = np.random.choice(pop_size, size=min(sample_size, pop_size), replace=False)
+
+    x, y = dataset[indices]
+    x_ = np.reshape(x, (len(x), -1))
+
+    print("Found %d objects with %d class types"%(len(x), len(np.unique(y))))
+
+    tsne = TSNE(n_components=2, random_state=1)
+    x_c = tsne.fit_transform(x_)
+
+    # t-SNE Visualization
+    _, ax = plt.subplots()
+    scatter = ax.scatter(x_c[:, 0], x_c[:, 1], c=y)
+
+    # produce a legend with the unique colors from the scatter
+    legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
+    ax.add_artist(legend)
+    ax.set_title("T-sne clusters")
+
+    plt.show()
+
