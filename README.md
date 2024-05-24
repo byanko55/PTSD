@@ -13,7 +13,7 @@ A repository that makes its owner crazy and powerless like living with '***post-
 ## Where does happiness come from? Find true happiness
 > **"Happiness occurs when we contribute our actions and lives to what we find ``meaningful``."**
 
-<br>s
+<br>
 
 Human beings want to find purpose and meaning in their lives. What is more realistic is that our purpose and what we find meaningful may not remain static all our lives. They’ll grow and evolve as we do.
 
