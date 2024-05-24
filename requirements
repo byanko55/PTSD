@@ -7,4 +7,5 @@ pandas
 scipy
 seaborn
 torch
+torchaudio
 transformers
