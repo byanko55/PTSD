@@ -4,6 +4,7 @@ from torch import Generator
 from torch.utils.data import Dataset, DataLoader, random_split
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn import decomposition
 
 
 def split_dataset(dataset:Dataset, train_ratio:float = 0.7, test_ratio:float = 0.2) -> Tuple[Any, Any, Any]:
@@ -87,7 +88,13 @@ def build_batches(dataset:Dataset, batch_size:int = 128, train_ratio:float = 0.7
     return batch_loader
 
 
-def make_clusters(dataset:Dataset, sample_size:int = 500) -> None:
+def make_clusters(dataset:Dataset, sample_size:int = 500, method='t-sne') -> None:
+    if method not in ['t-sne', 'pca']:
+        raise ValueError(" \
+                [make_clusters] decomposition method should be one among \
+                \{\'t-sne\', \'pca\'\}"
+            )
+
     pop_size = len(dataset)
     indices = np.random.choice(pop_size, size=min(sample_size, pop_size), replace=False)
 
@@ -96,8 +103,13 @@ def make_clusters(dataset:Dataset, sample_size:int = 500) -> None:
 
     print("Found %d objects with %d class types"%(len(x), len(np.unique(y))))
 
-    tsne = TSNE(n_components=2, random_state=1)
-    x_c = tsne.fit_transform(x_)
+    if method == 't-sne':
+        tsne = TSNE(n_components=2, random_state=1)
+        x_c = tsne.fit_transform(x_)
+    else :
+        pca = decomposition.PCA(n_components=2)
+        pca.fit(x_)
+        x_c = pca.transform(x_)
 
     # t-SNE Visualization
     _, ax = plt.subplots()
@@ -106,7 +118,11 @@ def make_clusters(dataset:Dataset, sample_size:int = 500) -> None:
     # produce a legend with the unique colors from the scatter
     legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
     ax.add_artist(legend)
-    ax.set_title("T-sne clusters")
+
+    if method == 't-sne':
+        ax.set_title("T-sne clusters")
+    else :
+        ax.set_title("PCA clusters")
 
     plt.show()
 
